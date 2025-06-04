@@ -36,7 +36,7 @@ def send_welcome(message):
         bot.send_message(
             user_id,
             f"✅ *You are authorized to access the EduVerse site!*\n\n"
-            f"🔐 *Token:*\n`{access_key}`\n"
+            f"🔐 *Token:*`{access_key}`\n"
             f"📆 *Validity*: Today Only\n\n"
             "✦ 𝙋𝙤𝙬𝙚𝙧𝙚𝙙 𝘽𝙮 —‌‌‌ 𝙀𝙙𝙪𝙑𝙚𝙧𝙨𝙚 𝙉𝙚𝙩𝙬𝙤𝙧𝙠 ✦\n",
             parse_mode="Markdown"
