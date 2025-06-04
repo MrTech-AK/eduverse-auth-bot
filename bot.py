@@ -36,19 +36,20 @@ def send_welcome(message):
         bot.send_message(
             user_id,
             f"✅ *You are authorized to access the EduVerse site!*\n\n"
-            f"🔐 *Your Access Key:*\n`{access_key}`\n\n"
-            "_This key is valid only for today._",
+            f"🔐 *Token:*\n`{access_key}`\n"
+            f"📆 *Validity*: Today Only\n\n"
+            "✦ 𝙋𝙤𝙬𝙚𝙧𝙚𝙙 𝘽𝙮 —‌‌‌ 𝙀𝙙𝙪𝙑𝙚𝙧𝙨𝙚 𝙉𝙚𝙩𝙬𝙤𝙧𝙠 ✦\n",
             parse_mode="Markdown"
         )
     else:
         join_button = telebot.types.InlineKeyboardMarkup()
         join_button.add(
-            telebot.types.InlineKeyboardButton("🚀 Join EduVerse Channel", url=f"https://t.me/{MAIN_CHANNEL[1:]}")
+            telebot.types.InlineKeyboardButton("🚀 Join Channel", url=f"https://t.me/{MAIN_CHANNEL[1:]}")
         )
         bot.send_message(
             user_id,
-            "❌ *You're not a member of the EduVerse Network.*\n\n"
-            "🔒 You must join the channel to access the website.",
+            "❌ *You're not a member of the EduVerse Network.*\n"
+            "_🔒 You must join the channel to access the website._\n\nSend /start to Get Token ⚡",
             reply_markup=join_button,
             parse_mode="Markdown"
         )
