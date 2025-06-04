@@ -1,61 +1,57 @@
 import telebot
+import os
 from datetime import datetime
 import random
 import string
-import hmac
-import hashlib
-from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_TOKEN = '7733917285:AAFqPbB5VLV07SCnX-SwoMumPp9uQ_qWEsk'
-CHANNEL_USERNAME = '@EduVerse_Network'
-SECRET_KEY = b'EDUVERSE2025'  # bytes key
+# Get bot token from environment variable
+BOT_TOKEN = os.getenv("BOT_TOKEN")
+bot = telebot.TeleBot(BOT_TOKEN)
 
-bot = telebot.TeleBot(API_TOKEN)
+# Main Channel Username
+MAIN_CHANNEL = '@EduVerse_Network'
 
-def generate_hmac_token():
-    now = datetime.now()
-    day = now.strftime("%a").upper()       # MON
-    date = now.strftime("%d%b").upper()    # 03JUN
-    base_token = f"{day}-{date}"           # MON-03JUN
+# Generate daily key
+def generate_access_key():
+    day = datetime.now().strftime("%a").upper()  # e.g., MON
+    date = datetime.now().strftime("%-d%b").upper()  # e.g., 4JUN
+    rand_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+    return f"{day}-{date}/{rand_str}"
 
-    hmac_token = hmac.new(SECRET_KEY, base_token.encode(), hashlib.sha256).hexdigest()[:8].upper()
-
-    random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
-    
-    full_token = f"{hmac_token}/{random_suffix}"
-    return full_token
-
+# Check membership in channel
 def is_user_in_channel(user_id):
     try:
-        member = bot.get_chat_member(CHANNEL_USERNAME, user_id)
-        return member.status in ['member', 'administrator', 'creator']
-    except:
+        member = bot.get_chat_member(MAIN_CHANNEL, user_id)
+        return member.status in ['member', 'creator', 'administrator']
+    except Exception as e:
         return False
 
 @bot.message_handler(commands=['start'])
-def welcome_user(message):
+def send_welcome(message):
     user_id = message.from_user.id
+    full_name = message.from_user.first_name
 
-    if not is_user_in_channel(user_id):
-        markup = InlineKeyboardMarkup()
-        btn = InlineKeyboardButton("🔗 Join EduVerse Channel", url=f"https://t.me/{CHANNEL_USERNAME.strip('@')}")
-        markup.add(btn)
-
-        bot.send_message(message.chat.id,
-            "🚫 *Access Denied!*\n\n"
-            "⚠️ You must join our official channel to continue.\n"
-            "🔓 Join and come back!",
-            parse_mode="Markdown",
-            reply_markup=markup
+    if is_user_in_channel(user_id):
+        access_key = generate_access_key()
+        bot.send_message(
+            user_id,
+            f"✅ *You are authorized to access the EduVerse site!*\n\n"
+            f"🔐 *Your Access Key:*\n`{access_key}`\n\n"
+            "_This key is valid only for today._",
+            parse_mode="Markdown"
         )
     else:
-        token = generate_hmac_token()
-        bot.send_message(message.chat.id,
-            f"✅ *You are verified!*\n\n"
-            f"🔑 *Token:* `{token}`\n"
-            "📅 Valid only for *today*\n\n"
-            "👉 Paste it at https://eduverse-official.netlify.app/verify",
+        join_button = telebot.types.InlineKeyboardMarkup()
+        join_button.add(
+            telebot.types.InlineKeyboardButton("🚀 Join EduVerse Channel", url=f"https://t.me/{MAIN_CHANNEL[1:]}")
+        )
+        bot.send_message(
+            user_id,
+            "❌ *You're not a member of the EduVerse Network.*\n\n"
+            "🔒 You must join the channel to access the website.",
+            reply_markup=join_button,
             parse_mode="Markdown"
         )
 
+print("🤖 Bot is running...")
 bot.infinity_polling()
