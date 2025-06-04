@@ -1,58 +1,74 @@
 import telebot
-import os
 from datetime import datetime
 import random
 import string
+import hmac
+import hashlib
+from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-# Get bot token from environment variable
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-bot = telebot.TeleBot(BOT_TOKEN)
+API_TOKEN = '7733917285:AAFqPbB5VLV07SCnX-SwoMumPp9uQ_qWEsk'
+CHANNELS = ['@EduVerse_Network', '@Topperz_Vault']  # ✅ Multiple channels
+SECRET_KEY = b'EDUVERSE2025'
 
-# Main Channel Username
-MAIN_CHANNEL = '@EduVerse_Network'
+bot = telebot.TeleBot(API_TOKEN)
 
-# Generate daily key
-def generate_access_key():
-    day = datetime.now().strftime("%a").upper()  # e.g., MON
-    date = datetime.now().strftime("%-d%b").upper()  # e.g., 4JUN
-    rand_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-    return f"{day}-{date}/{rand_str}"
+def generate_hmac_token():
+    now = datetime.now()
+    day = now.strftime("%a").upper()
+    date = now.strftime("%d%b").upper()
+    base_token = f"{day}-{date}"
+    hmac_token = hmac.new(SECRET_KEY, base_token.encode(), hashlib.sha256).hexdigest()[:8].upper()
+    random_suffix = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
+    return f"{hmac_token}/{random_suffix}"
 
-# Check membership in channel
-def is_user_in_channel(user_id):
-    try:
-        member = bot.get_chat_member(MAIN_CHANNEL, user_id)
-        return member.status in ['member', 'creator', 'administrator']
-    except Exception as e:
-        return False
+def is_user_in_all_channels(user_id):
+    for channel in CHANNELS:
+        try:
+            member = bot.get_chat_member(channel, user_id)
+            if member.status not in ['member', 'administrator', 'creator']:
+                return False
+        except:
+            return False
+    return True
 
 @bot.message_handler(commands=['start'])
-def send_welcome(message):
+def start(message):
     user_id = message.from_user.id
-    full_name = message.from_user.first_name
+    send_verification_prompt(message.chat.id, user_id)
 
-    if is_user_in_channel(user_id):
-        access_key = generate_access_key()
-        bot.send_message(
-            user_id,
-            f"✅ *You are authorized to access the EduVerse site!*\n\n"
-            f"🔐 *Token:*`{access_key}`\n"
-            f"📆 *Validity*: Today Only\n\n"
-            "✦ 𝙋𝙤𝙬𝙚𝙧𝙚𝙙 𝘽𝙮 —‌‌‌ 𝙀𝙙𝙪𝙑𝙚𝙧𝙨𝙚 𝙉𝙚𝙩𝙬𝙤𝙧𝙠 ✦\n",
-            parse_mode="Markdown"
-        )
+@bot.callback_query_handler(func=lambda call: call.data == 'verify_now')
+def verify_button_pressed(call):
+    user_id = call.from_user.id
+    if is_user_in_all_channels(user_id):
+        token = generate_hmac_token()
+        bot.send_message(call.message.chat.id,
+            f"✅ *You are verified!*\n\n"
+            f"🔑 *Token:* `{token}`\n"
+            f"📅 Valid only for *today*\n\n"
+            f"👉 Paste it at https://eduverse-official.netlify.app/main",
+            parse_mode="Markdown")
     else:
-        join_button = telebot.types.InlineKeyboardMarkup()
-        join_button.add(
-            telebot.types.InlineKeyboardButton("🚀 Join Channel", url=f"https://t.me/{MAIN_CHANNEL[1:]}")
-        )
-        bot.send_message(
-            user_id,
-            "❌ *You're not a member of the EduVerse Network.*\n"
-            "_🔒 You must join the channel to access the website._\n\nSend /start to Get Token ⚡",
-            reply_markup=join_button,
-            parse_mode="Markdown"
-        )
+        bot.answer_callback_query(call.id, "🚫 You haven't joined all channels yet!", show_alert=True)
 
-print("🤖 Bot is running...")
+def send_verification_prompt(chat_id, user_id):
+    if not is_user_in_all_channels(user_id):
+        markup = InlineKeyboardMarkup()
+        for ch in CHANNELS:
+            markup.add(InlineKeyboardButton(f"🔗 Join {ch}", url=f"https://t.me/{ch.strip('@')}"))
+        markup.add(InlineKeyboardButton("✅ I Joined", callback_data="verify_now"))
+
+        bot.send_message(chat_id,
+            "🚫 *Access Denied!*\n\n"
+            "⚠️ You must join all the required channels below to continue.",
+            parse_mode="Markdown",
+            reply_markup=markup)
+    else:
+        token = generate_hmac_token()
+        bot.send_message(chat_id,
+            f"✅ *You are verified!*\n\n"
+            f"🔑 *Token:* `{token}`\n"
+            f"📅 Valid only for *Today*\n\n"
+            f"👉 Paste it at https://eduverse-official.netlify.app/main",
+            parse_mode="Markdown")
+
 bot.infinity_polling()
