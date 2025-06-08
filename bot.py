@@ -6,7 +6,7 @@ import hmac
 import hashlib
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 
-API_TOKEN = '7733917285:AAFqPbB5VLV07SCnX-SwoMumPp9uQ_qWEsk'
+API_TOKEN = '8040947061:AAH2q44giCsPOOp1-hWSWHSwQsQj6WQigtY'
 CHANNELS = ['@EduVerse_Network', '@Topperz_Vault']  # ✅ Multiple channels
 SECRET_KEY = b'EDUVERSE2025'
 
@@ -48,7 +48,7 @@ def verify_button_pressed(call):
             f"👉 Paste it at https://eduverse-official.netlify.app/main",
             parse_mode="Markdown")
     else:
-        bot.answer_callback_query(call.id, "🚫 You haven't joined all channels yet!", show_alert=True)
+        bot.answer_callback_query(call.id, "🚫 You haven't joined all channels yet!\nPlease Join Them to get your *Website Access Key*", show_alert=True)
 
 def send_verification_prompt(chat_id, user_id):
     if not is_user_in_all_channels(user_id):
@@ -58,7 +58,7 @@ def send_verification_prompt(chat_id, user_id):
         markup.add(InlineKeyboardButton("✅ I Joined", callback_data="verify_now"))
 
         bot.send_message(chat_id,
-            "🚫 *Access Denied!*\n\n"
+            "🚫 *Website Access Denied!*\n\n"
             "⚠️ You must join all the required channels below to continue.",
             parse_mode="Markdown",
             reply_markup=markup)
